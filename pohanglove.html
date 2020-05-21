@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>포항사랑상품권 가맹점</title>
+    <style>
+        .list-container {
+            width: 1200px;
+            height: 300px;
+            overflow: auto;
+            border: 1px solid black;
+        }
+
+        table {
+            border: 1px solid black;
+            border-collapse: collapse;
+        }
+
+        td {
+            border: 1px solid black;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>포항사랑상품권 가맹점 목록</h2>
+    <div>
+        <label>업체명 : <input type="text" id="sname"></label>
+        <button onclick="search();">검색</button>
+        <div class="list-container" style="margin-top:5px;">
+            <table id="list"></table>
+        </div>
+        <div style="margin-top:5px;">
+            <div id="map" style="width:1200px;height:400px;"></div>
+        </div>
+    </div>
+    <script type="text/javascript"
+        src="//dapi.kakao.com/v2/maps/sdk.js?appkey=fb7cd7bc3c9b08c3a2ebbec8f5bd45eb"></script>
+    <script>
+        var _map;
+        var _marker;
+        var _opendata;
+        var _viewlist;
+
+        window.addEventListener("load", function () {
+            loadKakaomap();
+            loadOpendata();
+
+            document.getElementById("list").addEventListener("click", function (e) {
+                if (e.target.tagName == "TD") {
+                    var tr = e.target.parentNode;
+                    var obj = _viewlist[tr.dataset.id];
+                    var moveLatLon = new kakao.maps.LatLng(obj.lat, obj.lon);
+                    console.log(obj);
+                    _map.panTo(moveLatLon);
+                    _marker.setPosition(moveLatLon);
+
+                }
+            });
+        });
+
+        function loadKakaomap() {
+            var lat = 36.026292;
+            var lon = 129.3713301;
+            var container = document.getElementById('map');
+            var options = {
+                center: new kakao.maps.LatLng(lat, lon),
+                level: 3
+            };
+            _map = new kakao.maps.Map(container, options);
+            var markerPosition = new kakao.maps.LatLng(lat, lon);
+            _marker = new kakao.maps.Marker({
+                position: markerPosition
+            });
+            _marker.setMap(_map);
+        }
+
+        function loadOpendata() {
+            var xhr = new XMLHttpRequest();
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === xhr.DONE) {
+                    if (xhr.status === 200 || xhr.status === 201) {
+                        var rows = xhr.responseText.split("\n");
+                        _opendata = [];
+
+                        for (var i in rows) {
+                            if (i == 0) continue;
+                            if(!rows[i]) continue;
+
+                            var dbquote = false;
+                            var str = "";
+                            var cols = [];
+
+                            for (var j in rows[i]) {
+                                if (!dbquote && rows[i][j] == ",") {
+                                    cols.push(str);
+                                    str = "";
+                                } else if (!dbquote && rows[i][j] == "\"") {
+                                    dbquote = true;
+                                } else if (dbquote && rows[i][j] == "\"") {
+                                    dbquote = false;
+                                } else if (rows[i].length == Number(j) + 1) {
+                                    cols.push(str);
+                                } else {
+                                    str += rows[i][j];
+                                }
+                            }
+
+                            _opendata.push({
+                                name: cols[0],
+                                phone: cols[1],
+                                sort: cols[2],
+                                sort2: cols[3],
+                                post: cols[4],
+                                address: cols[5],
+                                lat: cols[6],
+                                lon: cols[7],
+                                lastmodify: cols[8]
+                            });
+                        }
+                    } else {
+                        console.error(xhr.responseText);
+                    }
+                }
+            };
+            xhr.open('GET', 'pohanglove.csv');
+            xhr.send();
+        }
+
+        function search() {
+            var sname = document.getElementById("sname").value;
+            _viewlist = [];
+            for (var i in _opendata) {
+                if (_opendata[i].name.indexOf(sname) > -1) {
+                    _viewlist.push(_opendata[i]);
+                }
+            }
+            
+            renderTable();
+        }
+
+        function renderTable() {
+            var table = document.getElementById("list");
+            table.innerHTML = "";
+
+            var html = "";
+
+            for (var i in _viewlist) {
+                html += "<tr data-id='" + i + "'>";
+                html += "<td>" + _viewlist[i].name + "</td>";
+                html += "<td style='display:none;'>" + _viewlist[i].phone + "</td>";
+                html += "<td style='display:none;'>" + _viewlist[i].sort + "</td>";
+                html += "<td>" + _viewlist[i].sort2 + "</td>";
+                html += "<td>" + _viewlist[i].post + "</td>";
+                html += "<td>" + _viewlist[i].address + "</td>";
+                html += "<td style='display:none;'>" + _viewlist[i].lat + "</td>";
+                html += "<td style='display:none;'>" + _viewlist[i].lon + "</td>";
+                html += "<td style='display:none;'>" + _viewlist[i].lastmodify + "</td>";
+                html += "</tr>";
+            }
+
+            table.innerHTML = html;
+
+        }
+    </script>
+</body>
+
+</html>
