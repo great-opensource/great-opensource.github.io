@@ -52,13 +52,22 @@
                 if (e.target.tagName == "TD") {
                     var tr = e.target.parentNode;
                     var obj = _viewlist[tr.dataset.id];
-                    var moveLatLon = new kakao.maps.LatLng(obj.lat, obj.lon);
-                    console.log(obj);
-                    _map.panTo(moveLatLon);
-                    _marker.setPosition(moveLatLon);
 
+                    if (obj.lat && obj.lon) {
+                        var moveLatLon = new kakao.maps.LatLng(obj.lat, obj.lon);
+                        _map.panTo(moveLatLon);
+                        _marker.setPosition(moveLatLon);
+                    } else {
+                        window.open("https://search.naver.com/search.naver?sm=top_hty&fbm=1&ie=utf8&query=" + encodeURIComponent(obj.address));
+                    }
                 }
             });
+        });
+
+        document.getElementById("sname").addEventListener("keyup", function (e) {
+            if (e.keyCode == 13) {
+                search();
+            }
         });
 
         function loadKakaomap() {
@@ -87,7 +96,7 @@
 
                         for (var i in rows) {
                             if (i == 0) continue;
-                            if(!rows[i]) continue;
+                            if (!rows[i]) continue;
 
                             var dbquote = false;
                             var str = "";
@@ -137,7 +146,7 @@
                     _viewlist.push(_opendata[i]);
                 }
             }
-            
+
             renderTable();
         }
 
